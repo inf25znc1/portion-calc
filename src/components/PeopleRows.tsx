@@ -43,7 +43,7 @@ export function PeopleRows({
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       {Array.from({ length: count }, (_, index) => {
         const rawShare =
           mode === 'equal'
@@ -54,11 +54,13 @@ export function PeopleRows({
         return (
           <div
             key={index}
-            className="flex min-h-10 items-center gap-3 border-b border-gray-200 py-3 last:border-b-0"
+            className="flex min-h-10 min-w-0 items-center gap-2 border-b border-gray-200 py-3 last:border-b-0 sm:gap-3"
           >
-            <PersonPill personIndex={index + 1} />
+            <div className="shrink-0">
+              <PersonPill personIndex={index + 1} />
+            </div>
 
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 overflow-hidden">
               <PortionDisplay
                 layout="spread"
                 raw={
@@ -68,7 +70,7 @@ export function PeopleRows({
                     <input
                       type="text"
                       inputMode="decimal"
-                      className="box-border min-h-10 w-[calc(5ch+1rem)] shrink-0 rounded-md border border-gray-300 px-2 text-center tabular-nums text-gray-900"
+                      className="box-border min-h-10 w-full min-w-0 max-w-full rounded-md border border-gray-300 px-2 text-center tabular-nums text-gray-900"
                       value={
                         rawShares[index] !== undefined
                           ? String(rawShares[index])

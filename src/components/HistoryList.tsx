@@ -17,15 +17,15 @@ export function HistoryList({
   const sorted = [...entries].sort((a, b) => b.timestamp - a.timestamp)
 
   return (
-    <section>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-gray-900">
+    <section className="min-w-0">
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
+        <h2 className="min-w-0 truncate text-lg font-semibold text-gray-900">
           History ({entries.length})
         </h2>
         {entries.length > 0 && (
           <button
             type="button"
-            className="flex min-h-10 items-center gap-1 rounded-md px-3 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            className="flex min-h-10 shrink-0 items-center gap-1 rounded-md px-3 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             aria-label="Clear all history"
             onClick={onClearAll}
           >
@@ -38,9 +38,9 @@ export function HistoryList({
       {sorted.length === 0 ? (
         <p className="text-sm text-gray-500">No saved calculations yet</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex min-w-0 flex-col gap-3">
           {sorted.map((entry) => (
-            <li key={entry.id}>
+            <li key={entry.id} className="min-w-0">
               <HistoryItem
                 entry={entry}
                 onLoad={() => onLoad(entry.id)}
