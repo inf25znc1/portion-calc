@@ -148,11 +148,12 @@ export function Calculator() {
 
           <div className="grid min-w-0 grid-cols-2 gap-3">
             <label className="flex min-w-0 flex-col gap-1 text-sm text-gray-600">
-              Raw amount{mode === 'equal' ? ' (optional)' : ''}
+              Raw amount
               <input
                 type="text"
                 inputMode="decimal"
-                className="min-h-10 w-full min-w-0 rounded-md border border-gray-300 bg-white px-3 text-gray-900"
+                className="min-h-10 w-full min-w-0 rounded-md border border-gray-300 bg-white px-3 text-gray-900 placeholder:text-gray-400"
+                placeholder={mode === 'equal' ? '(optional)' : undefined}
                 value={rawTotal === 0 ? '' : String(rawTotal)}
                 onChange={(e) => setRawTotal(parseDecimal(e.target.value))}
               />
