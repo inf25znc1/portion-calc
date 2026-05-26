@@ -6,6 +6,7 @@ export interface HistoryEntry {
   rawTotal: number
   cookedTotal: number
   people: number
+  days: number
   mode: PortionMode
   rawShares: number[] | null
   timestamp: number

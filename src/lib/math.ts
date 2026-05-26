@@ -16,23 +16,50 @@ export function computeCooked(
   return (rawShare / rawTotal) * cookedTotal
 }
 
+export function equalPortionShares(
+  rawTotal: number,
+  cookedTotal: number,
+  divisor: number,
+): { rawShare: number; cookedShare: number } {
+  if (!Number.isFinite(divisor) || divisor <= 0) {
+    return { rawShare: 0, cookedShare: 0 }
+  }
+  const cookedShare = Number.isFinite(cookedTotal) ? cookedTotal / divisor : 0
+  const rawShare =
+    Number.isFinite(rawTotal) && rawTotal > 0 ? rawTotal / divisor : 0
+  return { rawShare, cookedShare }
+}
+
 export interface HistoryPortion {
-  personIndex: number
+  index: number
+  kind: 'person' | 'day'
   rawShare: number
   cooked: number
 }
 
 export function getHistoryPortions(entry: HistoryEntry): HistoryPortion[] {
-  const { people, rawTotal, cookedTotal, mode, rawShares } = entry
+  const { people, days, rawTotal, cookedTotal, mode, rawShares } = entry
+  const dayCount = days > 0 ? days : 3
+
+  if (mode === 'equal') {
+    const { rawShare, cookedShare } = equalPortionShares(
+      rawTotal,
+      cookedTotal,
+      dayCount,
+    )
+    return Array.from({ length: dayCount }, (_, i) => ({
+      index: i + 1,
+      kind: 'day' as const,
+      rawShare,
+      cooked: cookedShare,
+    }))
+  }
+
   return Array.from({ length: people }, (_, i) => {
-    const rawShare =
-      mode === 'equal'
-        ? people > 0
-          ? rawTotal / people
-          : 0
-        : (rawShares?.[i] ?? 0)
+    const rawShare = rawShares?.[i] ?? 0
     return {
-      personIndex: i + 1,
+      index: i + 1,
+      kind: 'person' as const,
       rawShare,
       cooked: computeCooked(rawShare, rawTotal, cookedTotal),
     }

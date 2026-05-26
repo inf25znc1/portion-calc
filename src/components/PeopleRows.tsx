@@ -1,33 +1,32 @@
 import type { PortionMode } from '../lib/types'
-import { computeCooked, formatNumber } from '../lib/math'
+import { computeCooked, equalPortionShares, formatNumber } from '../lib/math'
 import { PersonPill } from './PersonPill'
+import { DayPill } from './DayPill'
 import { PortionDisplay } from './PortionDisplay'
 
 interface PeopleRowsProps {
   mode: PortionMode
   people: number
+  days: number
   rawTotal: number
   cookedTotal: number
   rawShares: number[]
   onSharesChange: (shares: number[]) => void
 }
 
-function equalRawShare(rawTotal: number, people: number): number {
-  if (!Number.isFinite(people) || people <= 0) {
-    return 0
-  }
-  return rawTotal / people
-}
-
 export function PeopleRows({
   mode,
   people,
+  days,
   rawTotal,
   cookedTotal,
   rawShares,
   onSharesChange,
 }: PeopleRowsProps) {
-  const count = Math.max(0, Math.floor(people))
+  const isEqual = mode === 'equal'
+  const count = isEqual
+    ? Math.max(0, Math.floor(days))
+    : Math.max(0, Math.floor(people))
 
   const handleShareChange = (index: number, value: string) => {
     const next = [...rawShares]
@@ -45,26 +44,35 @@ export function PeopleRows({
   return (
     <div className="min-w-0">
       {Array.from({ length: count }, (_, index) => {
-        const rawShare =
-          mode === 'equal'
-            ? equalRawShare(rawTotal, count)
-            : (rawShares[index] ?? 0)
-        const cooked = computeCooked(rawShare, rawTotal, cookedTotal)
+        const equalShares = isEqual
+          ? equalPortionShares(rawTotal, cookedTotal, count)
+          : null
+        const rawShare = isEqual
+          ? (equalShares?.rawShare ?? 0)
+          : (rawShares[index] ?? 0)
+        const cooked = isEqual
+          ? (equalShares?.cookedShare ?? 0)
+          : computeCooked(rawShare, rawTotal, cookedTotal)
+        const rowIndex = index + 1
 
         return (
           <div
-            key={index}
+            key={isEqual ? `day-${rowIndex}` : `person-${rowIndex}`}
             className="flex min-h-10 min-w-0 items-center gap-2 border-b border-gray-200 py-3 last:border-b-0 sm:gap-3"
           >
             <div className="shrink-0">
-              <PersonPill personIndex={index + 1} />
+              {isEqual ? (
+                <DayPill dayIndex={rowIndex} />
+              ) : (
+                <PersonPill personIndex={rowIndex} />
+              )}
             </div>
 
             <div className="min-w-0 flex-1 overflow-hidden">
               <PortionDisplay
                 layout="spread"
                 raw={
-                  mode === 'equal' ? (
+                  isEqual ? (
                     formatNumber(rawShare)
                   ) : (
                     <input
@@ -79,7 +87,7 @@ export function PeopleRows({
                       onChange={(e) =>
                         handleShareChange(index, e.target.value)
                       }
-                      aria-label={`Person ${index + 1} raw share`}
+                      aria-label={`Person ${rowIndex} raw share`}
                     />
                   )
                 }

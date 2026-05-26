@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '../lib/types'
 import { formatNumber, getHistoryPortions } from '../lib/math'
 import { PersonPill } from './PersonPill'
+import { DayPill } from './DayPill'
 import { PortionDisplay } from './PortionDisplay'
 
 interface HistoryItemProps {
@@ -42,11 +43,15 @@ export function HistoryItem({ entry, onLoad, onDelete }: HistoryItemProps) {
         <ul className="mt-2 flex min-w-0 flex-col gap-1.5">
           {portions.map((portion) => (
             <li
-              key={portion.personIndex}
+              key={`${portion.kind}-${portion.index}`}
               className="flex min-w-0 items-center gap-2 text-sm text-gray-600"
             >
               <div className="shrink-0">
-                <PersonPill personIndex={portion.personIndex} />
+                {portion.kind === 'day' ? (
+                  <DayPill dayIndex={portion.index} />
+                ) : (
+                  <PersonPill personIndex={portion.index} />
+                )}
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
                 <PortionDisplay

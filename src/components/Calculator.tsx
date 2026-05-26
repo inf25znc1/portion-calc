@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import type { HistoryEntry, PortionMode } from '../lib/types'
 import { ModeToggle } from './ModeToggle'
+import { StepperControl } from './StepperControl'
 import { PeopleRows } from './PeopleRows'
 import { HistoryList } from './HistoryList'
 
 const HISTORY_KEY = 'portion-calc-history'
 const DEFAULT_PEOPLE = 2
+const DEFAULT_DAYS = 3
 const MIN_PEOPLE = 1
 const MAX_PEOPLE = 20
+const MIN_DAYS = 1
+const MAX_DAYS = 20
 
 function resizeRawShares(shares: number[], count: number): number[] {
   return shares.slice(0, count)
@@ -33,6 +37,7 @@ export function Calculator() {
   const [rawTotal, setRawTotal] = useState(0)
   const [cookedTotal, setCookedTotal] = useState(0)
   const [people, setPeople] = useState(DEFAULT_PEOPLE)
+  const [days, setDays] = useState(DEFAULT_DAYS)
   const [mode, setMode] = useState<PortionMode>('custom')
   const [rawShares, setRawShares] = useState<number[]>(initialRawShares)
 
@@ -42,11 +47,20 @@ export function Calculator() {
     setRawShares((prev) => resizeRawShares(prev, clamped))
   }
 
-  const resetInputs = (peopleCount: number = DEFAULT_PEOPLE) => {
+  const updateDays = (next: number) => {
+    const clamped = Math.min(MAX_DAYS, Math.max(MIN_DAYS, next))
+    setDays(clamped)
+  }
+
+  const resetInputs = (
+    peopleCount: number = DEFAULT_PEOPLE,
+    daysCount: number = DEFAULT_DAYS,
+  ) => {
     setIngredient('')
     setRawTotal(0)
     setCookedTotal(0)
     setPeople(peopleCount)
+    setDays(daysCount)
     setMode('custom')
     setRawShares(initialRawShares())
   }
@@ -64,6 +78,7 @@ export function Calculator() {
     setRawTotal(entry.rawTotal)
     setCookedTotal(entry.cookedTotal)
     setPeople(entry.people)
+    setDays(entry.days > 0 ? entry.days : DEFAULT_DAYS)
     setMode(entry.mode)
     setRawShares(
       entry.rawShares
@@ -72,8 +87,11 @@ export function Calculator() {
     )
   }
 
+  const canSave =
+    cookedTotal !== 0 && (mode === 'equal' || rawTotal !== 0)
+
   const handleSave = () => {
-    if (rawTotal === 0 || cookedTotal === 0) {
+    if (!canSave) {
       return
     }
     const entry: HistoryEntry = {
@@ -82,6 +100,7 @@ export function Calculator() {
       rawTotal,
       cookedTotal,
       people,
+      days,
       mode,
       rawShares:
         mode === 'custom'
@@ -90,14 +109,12 @@ export function Calculator() {
       timestamp: Date.now(),
     }
     setHistory((prev) => [...prev, entry])
-    resetInputs(people)
+    resetInputs(people, days)
   }
 
   const handleDelete = (id: string) => {
     setHistory((prev) => prev.filter((e) => e.id !== id))
   }
-
-  const canSave = rawTotal !== 0 && cookedTotal !== 0
 
   return (
     <main className="min-h-svh w-full min-w-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
@@ -131,7 +148,7 @@ export function Calculator() {
 
           <div className="grid min-w-0 grid-cols-2 gap-3">
             <label className="flex min-w-0 flex-col gap-1 text-sm text-gray-600">
-              Raw amount
+              Raw amount{mode === 'equal' ? ' (optional)' : ''}
               <input
                 type="text"
                 inputMode="decimal"
@@ -156,38 +173,34 @@ export function Calculator() {
         <section className="flex min-w-0 flex-col gap-4 rounded-2xl bg-gray-100 p-4">
           <h2 className="text-lg font-semibold text-gray-900">Portions</h2>
 
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <span className="shrink-0 text-sm font-medium text-gray-700">People</span>
-            <div className="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-lg text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                disabled={people <= MIN_PEOPLE}
-                aria-label="Decrease people"
-                onClick={() => updatePeople(people - 1)}
-              >
-                −
-              </button>
-              <span className="min-w-8 text-center text-lg font-medium text-gray-900">
-                {people}
-              </span>
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-lg text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                disabled={people >= MAX_PEOPLE}
-                aria-label="Increase people"
-                onClick={() => updatePeople(people + 1)}
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <StepperControl
+            label="People"
+            value={people}
+            min={MIN_PEOPLE}
+            max={MAX_PEOPLE}
+            decreaseLabel="Decrease people"
+            increaseLabel="Increase people"
+            onChange={updatePeople}
+          />
 
           <ModeToggle mode={mode} onChange={setMode} />
+
+          {mode === 'equal' && (
+            <StepperControl
+              label="Days"
+              value={days}
+              min={MIN_DAYS}
+              max={MAX_DAYS}
+              decreaseLabel="Decrease days"
+              increaseLabel="Increase days"
+              onChange={updateDays}
+            />
+          )}
 
           <PeopleRows
             mode={mode}
             people={people}
+            days={days}
             rawTotal={rawTotal}
             cookedTotal={cookedTotal}
             rawShares={rawShares}
