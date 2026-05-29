@@ -24,9 +24,12 @@ export function PeopleRows({
   onSharesChange,
 }: PeopleRowsProps) {
   const isEqual = mode === 'equal'
-  const count = isEqual
-    ? Math.max(0, Math.floor(days))
-    : Math.max(0, Math.floor(people))
+  const personCount = Math.max(0, Math.floor(people))
+  const dayCount = Math.max(0, Math.floor(days))
+  const equalDivisor = personCount * dayCount
+  const equalShares = isEqual
+    ? equalPortionShares(rawTotal, cookedTotal, equalDivisor)
+    : null
 
   const handleShareChange = (index: number, value: string) => {
     const next = [...rawShares]
@@ -38,58 +41,81 @@ export function PeopleRows({
         next[index] = parsed
       }
     }
-    onSharesChange(next.slice(0, count))
+    onSharesChange(next.slice(0, personCount))
+  }
+
+  if (isEqual) {
+    return (
+      <div className="min-w-0 divide-y divide-gray-200">
+        {Array.from({ length: personCount }, (_, personOffset) => {
+          const personIndex = personOffset + 1
+          return (
+            <section
+              key={`person-${personIndex}`}
+              className="flex min-w-0 flex-col gap-2 py-3 first:pt-0 last:pb-0"
+            >
+              <PersonPill personIndex={personIndex} />
+              <ul className="flex min-w-0 flex-col gap-2 pl-1">
+                {Array.from({ length: dayCount }, (_, dayOffset) => {
+                  const dayIndex = dayOffset + 1
+                  return (
+                    <li
+                      key={`person-${personIndex}-day-${dayIndex}`}
+                      className="flex min-h-10 min-w-0 items-center gap-2 sm:gap-3"
+                    >
+                      <div className="shrink-0">
+                        <DayPill dayIndex={dayIndex} />
+                      </div>
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <PortionDisplay
+                          layout="spread"
+                          raw={formatNumber(equalShares?.rawShare ?? 0)}
+                          cooked={formatNumber(equalShares?.cookedShare ?? 0)}
+                        />
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )
+        })}
+      </div>
+    )
   }
 
   return (
     <div className="min-w-0">
-      {Array.from({ length: count }, (_, index) => {
-        const equalShares = isEqual
-          ? equalPortionShares(rawTotal, cookedTotal, count)
-          : null
-        const rawShare = isEqual
-          ? (equalShares?.rawShare ?? 0)
-          : (rawShares[index] ?? 0)
-        const cooked = isEqual
-          ? (equalShares?.cookedShare ?? 0)
-          : computeCooked(rawShare, rawTotal, cookedTotal)
+      {Array.from({ length: personCount }, (_, index) => {
+        const rawShare = rawShares[index] ?? 0
+        const cooked = computeCooked(rawShare, rawTotal, cookedTotal)
         const rowIndex = index + 1
 
         return (
           <div
-            key={isEqual ? `day-${rowIndex}` : `person-${rowIndex}`}
+            key={`person-${rowIndex}`}
             className="flex min-h-10 min-w-0 items-center gap-2 border-b border-gray-200 py-3 last:border-b-0 sm:gap-3"
           >
             <div className="shrink-0">
-              {isEqual ? (
-                <DayPill dayIndex={rowIndex} />
-              ) : (
-                <PersonPill personIndex={rowIndex} />
-              )}
+              <PersonPill personIndex={rowIndex} />
             </div>
 
             <div className="min-w-0 flex-1 overflow-hidden">
               <PortionDisplay
                 layout="spread"
                 raw={
-                  isEqual ? (
-                    formatNumber(rawShare)
-                  ) : (
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      className="box-border min-h-10 w-full min-w-0 max-w-full rounded-md border border-gray-300 px-2 text-center tabular-nums text-gray-900"
-                      value={
-                        rawShares[index] !== undefined
-                          ? String(rawShares[index])
-                          : ''
-                      }
-                      onChange={(e) =>
-                        handleShareChange(index, e.target.value)
-                      }
-                      aria-label={`Person ${rowIndex} raw share`}
-                    />
-                  )
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="box-border min-h-10 w-full min-w-0 max-w-full rounded-md border border-gray-300 px-2 text-center tabular-nums text-gray-900"
+                    value={
+                      rawShares[index] !== undefined
+                        ? String(rawShares[index])
+                        : ''
+                    }
+                    onChange={(e) => handleShareChange(index, e.target.value)}
+                    aria-label={`Person ${rowIndex} raw share`}
+                  />
                 }
                 cooked={formatNumber(cooked)}
               />

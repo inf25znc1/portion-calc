@@ -31,8 +31,8 @@ export function equalPortionShares(
 }
 
 export interface HistoryPortion {
-  index: number
-  kind: 'person' | 'day'
+  personIndex: number
+  dayIndex: number | null
   rawShare: number
   cooked: number
 }
@@ -42,14 +42,15 @@ export function getHistoryPortions(entry: HistoryEntry): HistoryPortion[] {
   const dayCount = days > 0 ? days : 3
 
   if (mode === 'equal') {
+    const personCount = people > 0 ? people : 1
     const { rawShare, cookedShare } = equalPortionShares(
       rawTotal,
       cookedTotal,
-      dayCount,
+      personCount * dayCount,
     )
-    return Array.from({ length: dayCount }, (_, i) => ({
-      index: i + 1,
-      kind: 'day' as const,
+    return Array.from({ length: personCount * dayCount }, (_, i) => ({
+      personIndex: Math.floor(i / dayCount) + 1,
+      dayIndex: (i % dayCount) + 1,
       rawShare,
       cooked: cookedShare,
     }))
@@ -58,8 +59,8 @@ export function getHistoryPortions(entry: HistoryEntry): HistoryPortion[] {
   return Array.from({ length: people }, (_, i) => {
     const rawShare = rawShares?.[i] ?? 0
     return {
-      index: i + 1,
-      kind: 'person' as const,
+      personIndex: i + 1,
+      dayIndex: null,
       rawShare,
       cooked: computeCooked(rawShare, rawTotal, cookedTotal),
     }

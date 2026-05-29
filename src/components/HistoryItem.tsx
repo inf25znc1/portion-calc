@@ -13,6 +13,16 @@ interface HistoryItemProps {
 export function HistoryItem({ entry, onLoad, onDelete }: HistoryItemProps) {
   const name = entry.ingredient.trim() || 'Unnamed'
   const portions = getHistoryPortions(entry)
+  const isEqual = entry.mode === 'equal'
+
+  const groupedByPerson = isEqual
+    ? portions.reduce<Map<number, typeof portions>>((map, portion) => {
+        const list = map.get(portion.personIndex) ?? []
+        list.push(portion)
+        map.set(portion.personIndex, list)
+        return map
+      }, new Map())
+    : null
 
   return (
     <div
@@ -39,19 +49,43 @@ export function HistoryItem({ entry, onLoad, onDelete }: HistoryItemProps) {
         />
       </p>
 
-      {portions.length > 0 && (
+      {portions.length > 0 && isEqual && groupedByPerson && (
+        <div className="mt-2 flex min-w-0 flex-col gap-3">
+          {[...groupedByPerson.entries()].map(([personIndex, dayPortions]) => (
+            <div key={`person-${personIndex}`} className="min-w-0">
+              <PersonPill personIndex={personIndex} />
+              <ul className="mt-1.5 flex min-w-0 flex-col gap-1.5 pl-1">
+                {dayPortions.map((portion) => (
+                  <li
+                    key={`person-${portion.personIndex}-day-${portion.dayIndex}`}
+                    className="flex min-w-0 items-center gap-2 text-sm text-gray-600"
+                  >
+                    <div className="shrink-0">
+                      <DayPill dayIndex={portion.dayIndex ?? 1} />
+                    </div>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <PortionDisplay
+                        raw={formatNumber(portion.rawShare)}
+                        cooked={formatNumber(portion.cooked)}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {portions.length > 0 && !isEqual && (
         <ul className="mt-2 flex min-w-0 flex-col gap-1.5">
           {portions.map((portion) => (
             <li
-              key={`${portion.kind}-${portion.index}`}
+              key={`person-${portion.personIndex}`}
               className="flex min-w-0 items-center gap-2 text-sm text-gray-600"
             >
               <div className="shrink-0">
-                {portion.kind === 'day' ? (
-                  <DayPill dayIndex={portion.index} />
-                ) : (
-                  <PersonPill personIndex={portion.index} />
-                )}
+                <PersonPill personIndex={portion.personIndex} />
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
                 <PortionDisplay
